@@ -102,6 +102,9 @@ $router->put("/route/{id}/profile", "Controller:method");
 $router->patch("/route/{id}/profile/{photo}", "Controller:method");
 $router->delete("/route/{id}", "Controller:method");
 
+// Usado em CRUD - [index, create, store, edit, update, destroy]
+$router->resource("/usuarios", "UsuarioController", 'usuarios');
+
 /**
  * group by routes and namespace
  * this produces routes for /admin/route and /admin/route/$id
