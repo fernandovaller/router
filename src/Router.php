@@ -16,7 +16,7 @@ class Router extends Dispatch
      * @param string $projectUrl
      * @param null|string $separator
      */
-    public function __construct(string $projectUrl, ?string $separator = ":")
+    public function __construct($projectUrl, $separator = ":")
     {
         parent::__construct($projectUrl, $separator);
     }
@@ -26,7 +26,7 @@ class Router extends Dispatch
      * @param $handler
      * @param string|null $name
      */
-    public function post(string $route, $handler, string $name = null): void
+    public function post($route, $handler, $name = null)
     {
         $this->addRoute("POST", $route, $handler, $name);
     }
@@ -36,7 +36,7 @@ class Router extends Dispatch
      * @param $handler
      * @param string|null $name
      */
-    public function get(string $route, $handler, string $name = null): void
+    public function get($route, $handler, $name = null)
     {
         $this->addRoute("GET", $route, $handler, $name);
     }
@@ -46,7 +46,7 @@ class Router extends Dispatch
      * @param $handler
      * @param string|null $name
      */
-    public function put(string $route, $handler, string $name = null): void
+    public function put($route, $handler, $name = null)
     {
         $this->addRoute("PUT", $route, $handler, $name);
     }
@@ -56,7 +56,7 @@ class Router extends Dispatch
      * @param $handler
      * @param string|null $name
      */
-    public function patch(string $route, $handler, string $name = null): void
+    public function patch($route, $handler, $name = null)
     {
         $this->addRoute("PATCH", $route, $handler, $name);
     }
@@ -66,8 +66,27 @@ class Router extends Dispatch
      * @param $handler
      * @param string|null $name
      */
-    public function delete(string $route, $handler, string $name = null): void
+    public function delete($route, $handler, $name = null)
     {
         $this->addRoute("DELETE", $route, $handler, $name);
+    }
+
+
+    /**
+     * @param string $route
+     * @param $handler Controller::method
+     * @param string|null $name
+     */
+    public function resource($route, $handler, $name = null)
+    {
+        $this->addRoute("GET", $route, "{$handler}:index", "{$name}.index");
+
+        $this->addRoute("GET", "{$route}/create", "{$handler}:create", "{$name}.create");
+        $this->addRoute("POST", "{$route}/store", "{$handler}:store", "{$name}.store");
+
+        $this->addRoute("GET", "{$route}/{id}/edit", "{$handler}:edit", "{$name}.edit");
+        $this->addRoute("POST", "{$route}/update", "{$handler}:update", "{$name}.update");
+
+        $this->addRoute("GET", "{$route}/{id}/destroy", "{$handler}:destroy", "{$name}.destroy");
     }
 }

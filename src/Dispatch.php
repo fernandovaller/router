@@ -34,16 +34,16 @@ abstract class Dispatch
     protected $error;
 
     /** @const int Bad Request */
-    public const BAD_REQUEST = 400;
+    const BAD_REQUEST = 400;
 
     /** @const int Not Found */
-    public const NOT_FOUND = 404;
+    const NOT_FOUND = 404;
 
     /** @const int Method Not Allowed */
-    public const METHOD_NOT_ALLOWED = 405;
+    const METHOD_NOT_ALLOWED = 405;
 
     /** @const int Not Implemented */
-    public const NOT_IMPLEMENTED = 501;
+    const NOT_IMPLEMENTED = 501;
 
     /**
      * Dispatch constructor.
@@ -51,11 +51,11 @@ abstract class Dispatch
      * @param string $projectUrl
      * @param null|string $separator
      */
-    public function __construct(string $projectUrl, ?string $separator = ":")
+    public function __construct($projectUrl, $separator = ":")
     {
         $this->projectUrl = (substr($projectUrl, "-1") == "/" ? substr($projectUrl, 0, -1) : $projectUrl);
-        $this->patch = (filter_input(INPUT_GET, "route", FILTER_DEFAULT) ?? "/");
-        $this->separator = ($separator ?? ":");
+        $this->patch = ($path = filter_input(INPUT_GET, "route", FILTER_DEFAULT)) ? $path : '/';
+        $this->separator = ($separator ? $separator : ':');
         $this->httpMethod = $_SERVER['REQUEST_METHOD'];
     }
 
@@ -64,14 +64,14 @@ abstract class Dispatch
      */
     public function __debugInfo()
     {
-        return $this->routes;
+        return [$this->patch, $this->httpMethod, $this->routes];
     }
 
     /**
      * @param null|string $namespace
      * @return Dispatch
      */
-    public function namespace(?string $namespace): Dispatch
+    public function setNamespace($namespace)
     {
         $this->namespace = ($namespace ? ucwords($namespace) : null);
         return $this;
@@ -81,7 +81,7 @@ abstract class Dispatch
      * @param null|string $group
      * @return Dispatch
      */
-    public function group(?string $group): Dispatch
+    public function group($group)
     {
         $this->group = ($group ? str_replace("/", "", $group) : null);
         return $this;
@@ -90,7 +90,7 @@ abstract class Dispatch
     /**
      * @return null|array
      */
-    public function data(): ?array
+    public function data()
     {
         return $this->data;
     }
@@ -98,7 +98,7 @@ abstract class Dispatch
     /**
      * @return null|int
      */
-    public function error(): ?int
+    public function error()
     {
         return $this->error;
     }
@@ -106,7 +106,7 @@ abstract class Dispatch
     /**
      * @return bool
      */
-    public function dispatch(): bool
+    public function dispatch()
     {
         if (empty($this->routes) || empty($this->routes[$this->httpMethod])) {
             $this->error = self::NOT_IMPLEMENTED;
@@ -130,7 +130,7 @@ abstract class Dispatch
     {
         if ($this->route) {
             if (is_callable($this->route['handler'])) {
-                call_user_func($this->route['handler'], ($this->route['data'] ?? []));
+                call_user_func($this->route['handler'], ($this->route['data'] ? $this->route['data'] : []));
                 return true;
             }
 
@@ -140,7 +140,7 @@ abstract class Dispatch
             if (class_exists($controller)) {
                 $newController = new $controller($this);
                 if (method_exists($controller, $method)) {
-                    $newController->$method(($this->route['data'] ?? []));
+                    $newController->$method(($this->route['data'] ? $this->route['data'] : []));
                     return true;
                 }
 
@@ -154,39 +154,5 @@ abstract class Dispatch
 
         $this->error = self::NOT_FOUND;
         return false;
-    }
-
-    /**
-     * httpMethod form spoofing
-     */
-    protected function formSpoofing(): void
-    {
-        $post = filter_input_array(INPUT_POST, FILTER_DEFAULT);
-
-        if (!empty($post['_method']) && in_array($post['_method'], ["PUT", "PATCH", "DELETE"])) {
-            $this->httpMethod = $post['_method'];
-            $this->data = $post;
-
-            unset($this->data["_method"]);
-            return;
-        }
-
-        if ($this->httpMethod == "POST") {
-            $this->data = filter_input_array(INPUT_POST, FILTER_DEFAULT);
-
-            unset($this->data["_method"]);
-            return;
-        }
-
-        if (in_array($this->httpMethod, ["PUT", "PATCH", "DELETE"]) && !empty($_SERVER['CONTENT_LENGTH'])) {
-            parse_str(file_get_contents('php://input', false, null, 0, $_SERVER['CONTENT_LENGTH']), $putPatch);
-            $this->data = $putPatch;
-
-            unset($this->data["_method"]);
-            return;
-        }
-
-        $this->data = [];
-        return;
     }
 }
